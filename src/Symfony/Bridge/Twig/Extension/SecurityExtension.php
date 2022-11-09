@@ -13,7 +13,9 @@ namespace Symfony\Bridge\Twig\Extension;
 
 use Symfony\Component\Security\Acl\Voter\FieldVote;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+use Symfony\Component\Security\Core\Authorization\UserAuthorizationCheckerInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationCredentialsNotFoundException;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Http\Impersonate\ImpersonateUrlGenerator;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
@@ -25,13 +27,11 @@ use Twig\TwigFunction;
  */
 final class SecurityExtension extends AbstractExtension
 {
-    private ?AuthorizationCheckerInterface $securityChecker;
-    private ?ImpersonateUrlGenerator $impersonateUrlGenerator;
-
-    public function __construct(AuthorizationCheckerInterface $securityChecker = null, ImpersonateUrlGenerator $impersonateUrlGenerator = null)
-    {
-        $this->securityChecker = $securityChecker;
-        $this->impersonateUrlGenerator = $impersonateUrlGenerator;
+    public function __construct(
+        private readonly ?AuthorizationCheckerInterface $securityChecker = null,
+        private readonly ?UserAuthorizationCheckerInterface $userSecurityChecker = null,
+        private readonly ?ImpersonateUrlGenerator $impersonateUrlGenerator = null
+    ) {
     }
 
     public function isGranted(mixed $role, mixed $object = null, string $field = null): bool
@@ -49,6 +49,19 @@ final class SecurityExtension extends AbstractExtension
         } catch (AuthenticationCredentialsNotFoundException) {
             return false;
         }
+    }
+
+    public function userIsGranted(UserInterface $user, mixed $role, mixed $object = null, string $field = null): bool
+    {
+        if (null === $this->userSecurityChecker) {
+            return false;
+        }
+
+        if (null !== $field) {
+            $object = new FieldVote($object, $field);
+        }
+
+        return $this->userSecurityChecker->userIsGranted($user, $role, $object);
     }
 
     public function getImpersonateExitUrl(string $exitTo = null): string
@@ -91,6 +104,7 @@ final class SecurityExtension extends AbstractExtension
     {
         return [
             new TwigFunction('is_granted', $this->isGranted(...)),
+            new TwigFunction('user_is_granted', $this->userIsGranted(...)),
             new TwigFunction('impersonation_exit_url', $this->getImpersonateExitUrl(...)),
             new TwigFunction('impersonation_exit_path', $this->getImpersonateExitPath(...)),
             new TwigFunction('impersonation_url', $this->getImpersonateUrl(...)),

@@ -65,6 +65,7 @@ class UndefinedCallableHandler
         'preconnect' => 'web-link',
         'prefetch' => 'web-link',
         'prerender' => 'web-link',
+        'user_is_granted' => 'security-core',
         'workflow_can' => 'workflow',
         'workflow_transitions' => 'workflow',
         'workflow_transition' => 'workflow',
