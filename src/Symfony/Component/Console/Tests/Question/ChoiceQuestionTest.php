@@ -133,6 +133,79 @@ class ChoiceQuestionTest extends TestCase
         ];
     }
 
+    /**
+     * @dataProvider selectUseCasesByKey
+     */
+    public function testSelectUseCasesByKey($multiSelect, $answers, $expected, $message, $default = null)
+    {
+        $question = new ChoiceQuestion('A question', [
+            'First response',
+            'Second response',
+            'Third response',
+            'Fourth response',
+            null,
+        ], $default);
+
+        $question->setMultiselect($multiSelect);
+        $question->setReturnKeys(true);
+
+        foreach ($answers as $answer) {
+            $validator = $question->getValidator();
+            $actual = $validator($answer);
+
+            $this->assertEquals($actual, $expected, $message);
+        }
+    }
+
+    public static function selectUseCasesByKey()
+    {
+        return [
+            [
+                false,
+                ['First response', 'First response ', ' First response', ' First response '],
+                '0',
+                'When passed single answer on singleSelect, the defaultValidator must return this answer as a string',
+            ],
+            [
+                true,
+                ['First response', 'First response ', ' First response', ' First response '],
+                ['0'],
+                'When passed single answer on MultiSelect, the defaultValidator must return this answer as an array',
+            ],
+            [
+                true,
+                ['First response,Second response', ' First response , Second response '],
+                ['0', '1'],
+                'When passed multiple answers on MultiSelect, the defaultValidator must return these answers as an array',
+            ],
+            [
+                false,
+                [null],
+                '4',
+                'When used null as default single answer on singleSelect, the defaultValidator must return this answer as a string',
+            ],
+            [
+                false,
+                ['First response'],
+                '0',
+                'When used a string as default single answer on singleSelect, the defaultValidator must return this answer as a string',
+                'First response',
+            ],
+            [
+                false,
+                [0],
+                '0',
+                'When passed single answer using choice\'s key, the defaultValidator must return the choice key',
+            ],
+            [
+                true,
+                ['0, 2'],
+                ['0', '2'],
+                'When passed multiple answers using choices\' key, the defaultValidator must return the choice keys in an array',
+            ],
+        ];
+    }
+
     public function testSelectWithNonStringChoices()
     {
         $question = new ChoiceQuestion('A question', [

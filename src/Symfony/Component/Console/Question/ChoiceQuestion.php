@@ -22,6 +22,7 @@ class ChoiceQuestion extends Question
 {
     private array $choices;
     private bool $multiselect = false;
+    private bool $returnKeys = false;
     private string $prompt = ' > ';
     private string $errorMessage = 'Value "%s" is invalid';
 
@@ -75,6 +76,28 @@ class ChoiceQuestion extends Question
     }
 
     /**
+     * Sets whether the selected choice key(s) should be returned.
+     *
+     * When returnKeys is set to true, the array key(s) of the selected choice(s) will be returned,
+     * otherwise the key(s) will be returned if the array is associative, value(s) if the array is not associative.
+     */
+    public function setReturnKeys(bool $returnKeys): static
+    {
+        $this->returnKeys = $returnKeys;
+        $this->setValidator($this->getDefaultValidator());
+
+        return $this;
+    }
+
+    /**
+     * Returns whether the returnKeys option is enabled.
+     */
+    public function getReturnKeys(): bool
+    {
+        return $this->returnKeys;
+    }
+
+    /**
      * Gets the prompt for choices.
      */
     public function getPrompt(): string
@@ -114,9 +137,9 @@ class ChoiceQuestion extends Question
         $choices = $this->choices;
         $errorMessage = $this->errorMessage;
         $multiselect = $this->multiselect;
-        $isAssoc = $this->isAssoc($choices);
+        $returnKeys = $this->returnKeys || $this->isAssoc($choices);
 
-        return function ($selected) use ($choices, $errorMessage, $multiselect, $isAssoc) {
+        return function ($selected) use ($choices, $errorMessage, $multiselect, $returnKeys) {
             if ($multiselect) {
                 // Check for a separated comma values
                 if (!preg_match('/^[^,]+(?:,[^,]+)*$/', (string) $selected, $matches)) {
@@ -149,7 +172,7 @@ class ChoiceQuestion extends Question
 
                 $result = array_search($value, $choices);
 
-                if (!$isAssoc) {
+                if (!$returnKeys) {
                     if (false !== $result) {
                         $result = $choices[$result];
                     } elseif (isset($choices[$value])) {
@@ -164,7 +187,7 @@ class ChoiceQuestion extends Question
                 }
 
                 // For associative choices, consistently return the key as string:
-                $multiselectChoices[] = $isAssoc ? (string) $result : $result;
+                $multiselectChoices[] = $returnKeys ? (string) $result : $result;
             }
 
             if ($multiselect) {

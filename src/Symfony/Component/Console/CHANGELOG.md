@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+7.1
+---
+
+ * Add the ability to return selected choice key(s), rather than value(s), when using `ChoiceQuestion`
+
 7.0
 ---
 
